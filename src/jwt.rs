@@ -1,2 +1,2 @@
 mod authorize;
-pub(crate) mod structs;
+pub mod structs;
