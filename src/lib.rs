@@ -64,7 +64,7 @@ mod tests {
     }
 
     #[test]
-    fn test_send_jwt_200() {
+    fn test_send_jwt() {
         let server = MockServer::start();
         let salesforce_mock = server.mock(|when, then| {
             when.method(POST).path("/success/services/oauth2/token");
@@ -84,7 +84,7 @@ mod tests {
             Audience::ExperienceCloud("https://someurl.com".to_owned()),
             "test@test.com".to_owned(),
         );
-        let jwt_response = jwt_struct.send(
+        let jwt_response = jwt_struct.clone().send(
             include_bytes!("../private-key.pem"),
             format!("http://127.0.0.1:{}/success", server.port()),
         );
@@ -104,6 +104,33 @@ mod tests {
             "https://yourInstance.salesforce.com/id/00Dxx0000001gPLEAY/005xx000001SwiUAAS"
                 .to_owned()
         );
-        assert_eq!(jwt_response.token_type, "Bearer".to_owned())
+        assert_eq!(jwt_response.token_type, "Bearer".to_owned());
+
+        let salesforce_mock = server.mock(|when, then| {
+            when.method(POST).path("/failure/services/oauth2/token");
+            then.status(400).body(
+                json!({
+                    "error":"invalid client id",}
+                )
+                .to_string(),
+            );
+        });
+
+        let jwt_response = jwt_struct.send(
+            include_bytes!("../private-key.pem"),
+            format!("http://127.0.0.1:{}/failure", server.port()),
+        );
+        salesforce_mock.assert();
+        assert_eq!(jwt_response.is_err(), true);
+        assert_eq!(
+            jwt_response.err().unwrap(),
+            format!(
+                "received a 400 response with a body of {}",
+                json!({
+                    "error":"invalid client id",
+                })
+                .to_string()
+            )
+        )
     }
 }

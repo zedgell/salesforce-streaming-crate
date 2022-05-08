@@ -11,7 +11,7 @@ pub enum Audience {
     ExperienceCloud(String),
 }
 
-#[derive(PartialEq, Serialize, Deserialize)]
+#[derive(PartialEq, Serialize, Deserialize, Clone)]
 pub struct JwtRequest {
     pub iss: String,
     pub aud: String,
